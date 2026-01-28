@@ -11,9 +11,9 @@
     "ios": {
       "supportsTablet": true
     },
-    "name": "ComplyEase",
+    "name": "Surefile",
     "orientation": "portrait",
-    "slug": "ComplyEase",
+    "slug": "surefile",
     "splash": {
       "backgroundColor": "#ffffff",
       "image": "./assets/splash-icon.png",

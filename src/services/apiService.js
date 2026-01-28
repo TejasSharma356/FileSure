@@ -1,85 +1,125 @@
-import { MOCK_COMPLIANCES } from '../mockData/compliances';
-import { MOCK_USER } from '../mockData/user';
+import { Platform } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
-// Simulate network delay
-const delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+const BASE_URL = 'http://172.20.10.5:5000'; // Updated to physical machine IP
+const API_URL = `${BASE_URL}/api`;
+
+const getHeaders = async () => {
+    const token = await AsyncStorage.getItem('userToken');
+    return {
+        'Content-Type': 'application/json',
+        ...(token ? { 'x-auth-token': token } : {})
+    };
+};
 
 export const apiService = {
-    // Authentication (Mock)
+    // Auth
     login: async (email, password) => {
-        await delay(1000);
-        if (email === 'demo@example.com' && password === 'password') {
-            // Return a user object without business profile initially if needed,
-            // but for simplicity we return the full mock user for now or a basic auth token equivalent
-            return { token: 'mock-jwt-token', user: { id: 'u1', email } };
+        const response = await fetch(`${API_URL}/auth/login`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ email, password })
+        });
+
+        const text = await response.text();
+        let data;
+        try {
+            data = JSON.parse(text);
+        } catch (e) {
+            console.error("API Response Parse Error:", text);
+            throw new Error(text || 'Network response was not valid JSON');
         }
-        throw new Error('Invalid credentials');
+
+        if (!response.ok) throw new Error(data.msg || 'Login failed');
+        return data;
     },
 
     signup: async (userData) => {
-        await delay(1000);
-        return { token: 'mock-jwt-token', user: { id: 'u2', ...userData } };
+        const response = await fetch(`${API_URL}/auth/register`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(userData)
+        });
+
+        const text = await response.text();
+        let data;
+        try {
+            data = JSON.parse(text);
+        } catch (e) {
+            console.error("API Response Parse Error:", text);
+            throw new Error(text || 'Network response was not valid JSON');
+        }
+
+        if (!response.ok) throw new Error(data.msg || 'Signup failed');
+        return data;
     },
 
-    // Business Profile
+    // Business
     getBusinessProfile: async () => {
-        await delay(800);
-        // TODO: Fetch from real backend
-        return MOCK_USER;
+        const headers = await getHeaders();
+        const response = await fetch(`${API_URL}/business`, { headers });
+        const data = await response.json();
+        if (response.status === 404) return null;
+        if (!response.ok) throw new Error(data.msg || 'Failed to fetch profile');
+        return data;
     },
 
-    updateBusinessProfile: async (data) => {
-        await delay(1000);
-        // TODO: Send to real backend
-        console.log('Updated profile:', data);
-        return { ...MOCK_USER, ...data };
+    updateBusinessProfile: async (profileData) => {
+        const headers = await getHeaders();
+        const response = await fetch(`${API_URL}/business`, {
+            method: 'POST',
+            headers,
+            body: JSON.stringify(profileData)
+        });
+        const data = await response.json();
+        if (!response.ok) throw new Error(data.msg || 'Failed to update profile');
+        return data;
     },
 
-    // Compliances
-    getComplianceChecklist: async (businessType) => {
-        await delay(1000);
-        // TODO: Fetch from backend based on businessType
-        // Filter mocks for demo
-        if (!businessType) return MOCK_COMPLIANCES;
-        return MOCK_COMPLIANCES.filter(c => c.businessType.includes(businessType));
+    // Filing
+    getFilings: async () => {
+        const headers = await getHeaders();
+        const response = await fetch(`${API_URL}/filing`, { headers });
+        return response.json();
     },
 
-    // Revenue
-    saveRevenueData: async (revenueData) => {
-        await delay(1200);
-        // TODO: Send to backend
-        console.log('Saved revenue data:', revenueData);
-        return { success: true, id: 'rev-' + Date.now() };
+    saveFiling: async (filingData) => {
+        const headers = await getHeaders();
+        const response = await fetch(`${API_URL}/filing`, {
+            method: 'POST',
+            headers,
+            body: JSON.stringify(filingData)
+        });
+        return response.json();
     },
 
-    // Return Filing
-    getReturnForm: async (formType) => {
-        await delay(800);
-        // TODO: Fetch form schema/data
-        return {
-            formId: 'gst-3b',
-            fields: [
-                { id: 'sales', label: 'Total Sales', type: 'number', required: true },
-                { id: 'tax', label: 'Tax Payable', type: 'number', required: true },
-                { id: 'itc', label: 'Input Tax Credit', type: 'number', required: true },
-            ]
-        };
+    // --- Legacy / Adapter Methods (Prevent Crashes) ---
+    getDeadlines: async () => {
+        // TODO: Implement backend endpoint for deadlines
+        return [];
+    },
+
+    saveRevenueData: async (data) => {
+        // TODO: Implement backend endpoint for revenue
+        console.log("Mock Revenue Saved:", data);
+        return { success: true };
     },
 
     saveReturnDraft: async (draftData) => {
-        await delay(800);
-        console.log('Saved draft:', draftData);
-        return { success: true, draftId: 'draft-' + Date.now() };
+        // Adapt old frontend call to new backend structure
+        return apiService.saveFiling({
+            filingType: 'GSTR-3B', // Default for now
+            period: 'October 2023',
+            status: 'Draft',
+            data: draftData
+        });
     },
 
-    // Deadlines
-    getDeadlines: async () => {
-        await delay(600);
-        return MOCK_COMPLIANCES.map(c => ({
-            id: c.id,
-            title: c.title,
-            dueDate: c.dueDate,
-            status: new Date(c.dueDate) < new Date() ? 'At Risk' : 'Safe' // Simple logic
-        }));
+    getReturnForm: async (formType) => {
+        // Keep mock form logic for Wizard
+        return {
+            formId: 'gst-3b',
+            fields: []
+        };
     }
 };

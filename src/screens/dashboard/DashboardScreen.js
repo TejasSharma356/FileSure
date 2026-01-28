@@ -146,10 +146,10 @@ export const DashboardScreen = ({ navigation }) => {
             {/* FAB */}
             <TouchableOpacity
                 style={styles.fab}
-                onPress={() => navigation.navigate('Filing')}
+                onPress={() => navigation.navigate('Chat')}
             >
-                <Ionicons name="add" size={24} color="white" />
-                <Text style={styles.fabText}>File Now</Text>
+                <Ionicons name="chatbubbles-sharp" size={24} color="white" />
+                <Text style={styles.fabText}>Ask Expert</Text>
             </TouchableOpacity>
         </View>
     );
@@ -378,7 +378,7 @@ const styles = StyleSheet.create({
         position: 'absolute',
         bottom: 24,
         right: 24,
-        backgroundColor: '#1D4ED8',
+        backgroundColor: colors.primary,
         flexDirection: 'row',
         alignItems: 'center',
         paddingVertical: 12,

@@ -1,106 +1,205 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, FlatList, TouchableOpacity, TextInput } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, Alert, Platform } from 'react-native';
 import { colors } from '../../constants/colors';
 import { spacing } from '../../constants/spacing';
 import { typography } from '../../constants/typography';
+import { Button } from '../../components/Button';
+import { Input } from '../../components/Input';
+import { apiService } from '../../services/apiService';
 import { Ionicons } from '@expo/vector-icons';
-import { useData } from '../../context/DataContext';
 
-export const ReturnFilingScreen = ({ navigation }) => {
-    const { compliances } = useData();
-    const [searchQuery, setSearchQuery] = useState('');
+export const ReturnFilingScreen = () => {
+    const [step, setStep] = useState(1);
+    const [loading, setLoading] = useState(false);
 
-    const filteredCompliances = compliances.filter(c =>
-        c.title.toLowerCase().includes(searchQuery.toLowerCase())
+    // Mock Form Data
+    const [sales, setSales] = useState('500000');
+    const [tax, setTax] = useState('90000'); // ~18%
+    const [itc, setItc] = useState('45000'); // Input tax credit
+    const [challanId, setChallanId] = useState('');
+
+    const TOTAL_STEPS = 6;
+
+    const handleNext = () => setStep(prev => Math.min(prev + 1, TOTAL_STEPS));
+    const handleBack = () => setStep(prev => Math.max(prev - 1, 1));
+
+    const handleSubmit = async () => {
+        setLoading(true);
+        try {
+            await apiService.saveReturnDraft({ sales, tax, itc, challanId });
+            Alert.alert('Success', 'Return Filed Successfully! (Mock)');
+            setStep(1); // Reset
+            setChallanId('');
+        } catch (err) {
+            Alert.alert('Error', 'Failed to file return');
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    // --- STEP 1: Period ---
+    const renderStep1 = () => (
+        <View>
+            <Text style={styles.stepTitle}>Step 1: Confirm Period</Text>
+            <Text style={styles.label}>Filing for Month:</Text>
+            <View style={styles.readOnlyBox}>
+                <Text style={styles.readOnlyText}>October 2023</Text>
+            </View>
+            <Text style={styles.helper}>Based on your recent revenue uploads.</Text>
+            <View style={styles.infoBox}>
+                <Ionicons name="information-circle-outline" size={20} color={colors.primary} />
+                <Text style={styles.infoText}>Due Date: 20th Nov 2023</Text>
+            </View>
+        </View>
     );
 
-    const renderItem = ({ item }) => {
-        // Enriched mock data for UI demo purposes not yet in context
-        const progress = item.progress || 0.25;
-        const totalSteps = item.totalSteps || 4;
-        const currentStep = Math.round(progress * totalSteps);
-        const priority = item.priority || (item.status === 'Pending' ? 'High Priority' : 'Normal Priority');
-        const daysLeft = Math.ceil((new Date(item.dueDate) - new Date()) / (1000 * 60 * 60 * 24));
+    // --- STEP 2: Upload Documents (New) ---
+    const renderStep2 = () => (
+        <View>
+            <Text style={styles.stepTitle}>Step 2: Upload Documents</Text>
+            <Text style={styles.subtitle}>Upload your sales invoices and purchase bills for verification.</Text>
 
-        return (
-            <TouchableOpacity
-                style={styles.card}
-                onPress={() => navigation.navigate('ComplianceForm', { complianceId: item.id, title: item.title })}
-            >
-                <View style={styles.cardHeader}>
-                    <View style={styles.iconBox}>
-                        <Ionicons name="document-text" size={24} color={colors.primary} />
-                    </View>
-                    <View style={styles.headerContent}>
-                        <View style={styles.titleRow}>
-                            <Text style={styles.cardTitle}>{item.title}</Text>
-                        </View>
-                        <View style={styles.tagsRow}>
-                            <View style={styles.pillBlack}>
-                                <Text style={styles.pillTextWhite}>{item.type || 'GST'}</Text>
-                            </View>
-                            <View style={[styles.pillStatus, { backgroundColor: item.status === 'At Risk' ? '#FEE2E2' : '#FEF3C7' }]}>
-                                <Text style={[styles.pillTextStatus, { color: item.status === 'At Risk' ? colors.error : colors.warning }]}>
-                                    {item.status}
-                                </Text>
-                            </View>
-                        </View>
-                    </View>
-                </View>
+            <View style={styles.uploadBox}>
+                <Ionicons name="cloud-upload-outline" size={40} color={colors.textSecondary} />
+                <Text style={styles.uploadText}>Upload Sales Register (CSV/Excel)</Text>
+                <Button title="Select File" onPress={() => Alert.alert('Upload', 'Mock File Picker')} variant="outline" style={{ marginTop: spacing.sm }} />
+            </View>
 
-                <Text style={styles.description}>{item.description}</Text>
+            <View style={styles.uploadBox}>
+                <Ionicons name="cloud-upload-outline" size={40} color={colors.textSecondary} />
+                <Text style={styles.uploadText}>Upload Purchase Register (CSV/Excel)</Text>
+                <Button title="Select File" onPress={() => Alert.alert('Upload', 'Mock File Picker')} variant="outline" style={{ marginTop: spacing.sm }} />
+            </View>
+        </View>
+    );
 
-                <View style={styles.dateRow}>
-                    <Ionicons name="calendar-outline" size={16} color={colors.textSecondary} />
-                    <Text style={styles.dateText}>Due: {new Date(item.dueDate).toLocaleDateString()}</Text>
-                    <View style={[styles.daysLeftPill, { backgroundColor: daysLeft < 5 ? '#FEF3C7' : '#EFF6FF' }]}>
-                        <Text style={[styles.daysLeftText, { color: daysLeft < 5 ? colors.warning : colors.primary }]}>
-                            {daysLeft} days left
-                        </Text>
-                    </View>
-                </View>
+    // --- STEP 3: Sales & Tax ---
+    const renderStep3 = () => (
+        <View>
+            <Text style={styles.stepTitle}>Step 3: Total Sales & Tax</Text>
+            <Input
+                label="Total Taxable Value"
+                value={sales}
+                onChangeText={setSales}
+                keyboardType="numeric"
+                placeholder="0"
+            />
+            <Input
+                label="Total Tax Payable (IGST/CGST/SGST)"
+                value={tax}
+                onChangeText={setTax}
+                keyboardType="numeric"
+                placeholder="0"
+            />
+            <Text style={styles.helper}>Pre-filled from your uploaded sales ledger.</Text>
+        </View>
+    );
 
-                <View style={styles.progressSection}>
-                    <View style={styles.progressLabelRow}>
-                        <Text style={styles.progressLabel}>Progress</Text>
-                        <Text style={styles.progressLabel}>{currentStep}/{totalSteps} steps</Text>
-                    </View>
-                    <View style={styles.progressBarBg}>
-                        <View style={[styles.progressBarFill, { width: `${progress * 100}%` }]} />
-                    </View>
-                </View>
+    // --- STEP 4: ITC ---
+    const renderStep4 = () => (
+        <View>
+            <Text style={styles.stepTitle}>Step 4: Input Tax Credit (ITC)</Text>
+            <Input
+                label="Eligible ITC"
+                value={itc}
+                onChangeText={setItc}
+                keyboardType="numeric"
+                placeholder="0"
+            />
+            <Text style={styles.helper}>Credit available from GSTR-2B (Mock).</Text>
+            <View style={styles.calcBox}>
+                <Text style={styles.calcLabel}>Net Tax Payable:</Text>
+                <Text style={styles.calcValue}>₹{Math.max(0, parseInt(tax || 0) - parseInt(itc || 0))}</Text>
+            </View>
+        </View>
+    );
 
-                <View style={styles.priorityRow}>
-                    <Ionicons name="alert-circle" size={16} color={colors.error} />
-                    <Text style={styles.priorityText}>{priority}</Text>
-                </View>
-            </TouchableOpacity>
-        );
-    };
+    // --- STEP 5: Payment (New) ---
+    const renderStep5 = () => (
+        <View>
+            <Text style={styles.stepTitle}>Step 5: Tax Payment</Text>
+            <Text style={styles.subtitle}>Pay the net liability through Challan.</Text>
+
+            <View style={styles.paymentCard}>
+                <Text style={styles.paymentLabel}>Liablity</Text>
+                <Text style={styles.paymentValue}>₹{Math.max(0, parseInt(tax || 0) - parseInt(itc || 0))}</Text>
+            </View>
+
+            <Input
+                label="Challan Identification Number (CIN) / Ref ID"
+                value={challanId}
+                onChangeText={setChallanId}
+                placeholder="Enter Challan Ref from Bank"
+            />
+
+            <Button
+                title="Create Mock Challan"
+                onPress={() => { setChallanId('CIN' + Math.floor(Math.random() * 100000)); Alert.alert('Payment', 'Mock Payment Successful'); }}
+                variant="secondary"
+                style={{ marginBottom: spacing.md }}
+            />
+        </View>
+    );
+
+    // --- STEP 6: Review & Submit ---
+    const renderStep6 = () => (
+        <View>
+            <Text style={styles.stepTitle}>Step 6: Review & Submit</Text>
+            <View style={styles.reviewCard}>
+                <ReviewRow label="Filing Period" value="Oct 2023" />
+                <ReviewRow label="Total Sales" value={`₹${sales}`} />
+                <ReviewRow label="Total Tax" value={`₹${tax}`} />
+                <ReviewRow label="Eligible ITC" value={`₹${itc}`} />
+                <View style={styles.divider} />
+                <ReviewRow label="Net Payable" value={`₹${Math.max(0, parseInt(tax || 0) - parseInt(itc || 0))}`} highlight />
+                <ReviewRow label="Payment Ref" value={challanId || 'Pending'} />
+            </View>
+
+            <View style={styles.warningBox}>
+                <Ionicons name="warning-outline" size={16} color={colors.warning} />
+                <Text style={styles.warningText}>
+                    I hereby declare that the information given above is true and correct to the best of my knowledge.
+                </Text>
+            </View>
+        </View>
+    );
+
+    const ReviewRow = ({ label, value, highlight }) => (
+        <View style={styles.reviewRow}>
+            <Text style={styles.reviewLabel}>{label}:</Text>
+            <Text style={[styles.reviewValue, highlight && { color: colors.primary, fontWeight: 'bold' }]}>{value}</Text>
+        </View>
+    );
 
     return (
         <View style={styles.container}>
-            <View style={styles.searchContainer}>
-                <View style={styles.searchBar}>
-                    <Ionicons name="search" size={20} color={colors.textSecondary} />
-                    <TextInput
-                        style={styles.input}
-                        placeholder="Search compliance..."
-                        value={searchQuery}
-                        onChangeText={setSearchQuery}
-                    />
-                </View>
-                <TouchableOpacity style={styles.filterBtn}>
-                    <Ionicons name="filter" size={20} color="white" />
-                </TouchableOpacity>
+            {/* Progress Header */}
+            <View style={styles.progressContainer}>
+                {Array.from({ length: TOTAL_STEPS }).map((_, i) => (
+                    <View key={i} style={[styles.bar, step >= i + 1 && styles.activeBar]} />
+                ))}
             </View>
+            <Text style={styles.stepIndicator}>Step {step} of {TOTAL_STEPS}</Text>
 
-            <FlatList
-                data={filteredCompliances}
-                renderItem={renderItem}
-                keyExtractor={item => item.id}
-                contentContainerStyle={styles.list}
-            />
+            <ScrollView contentContainerStyle={styles.content}>
+                {step === 1 && renderStep1()}
+                {step === 2 && renderStep2()}
+                {step === 3 && renderStep3()}
+                {step === 4 && renderStep4()}
+                {step === 5 && renderStep5()}
+                {step === 6 && renderStep6()}
+            </ScrollView>
+
+            <View style={styles.footer}>
+                {step > 1 && (
+                    <Button title="Back" onPress={handleBack} variant="outline" style={{ flex: 1, marginRight: spacing.sm }} />
+                )}
+                {step < TOTAL_STEPS ? (
+                    <Button title="Next" onPress={handleNext} style={{ flex: 1 }} />
+                ) : (
+                    <Button title="File Return" onPress={handleSubmit} loading={loading} style={{ flex: 1 }} />
+                )}
+            </View>
         </View>
     );
 };
@@ -110,152 +209,176 @@ const styles = StyleSheet.create({
         flex: 1,
         backgroundColor: colors.background,
     },
-    searchContainer: {
+    progressContainer: {
         flexDirection: 'row',
         padding: spacing.md,
-        gap: spacing.sm,
+        gap: spacing.xs,
+        paddingBottom: spacing.xs,
     },
-    searchBar: {
+    bar: {
         flex: 1,
-        flexDirection: 'row',
-        alignItems: 'center',
-        backgroundColor: colors.surface,
-        borderRadius: 8,
-        paddingHorizontal: spacing.sm,
-        borderWidth: 1,
-        borderColor: colors.border,
-        height: 48,
+        height: 4,
+        backgroundColor: colors.border,
+        borderRadius: 2,
     },
-    input: {
-        flex: 1,
-        marginLeft: spacing.sm,
-        fontSize: 16,
+    activeBar: {
+        backgroundColor: colors.primary,
     },
-    filterBtn: {
-        width: 48,
-        height: 48,
-        backgroundColor: '#1E40AF',
-        borderRadius: 8,
-        justifyContent: 'center',
-        alignItems: 'center',
+    stepIndicator: {
+        ...typography.caption,
+        textAlign: 'center',
+        paddingBottom: spacing.sm,
+        color: colors.textSecondary,
     },
-    list: {
+    content: {
         padding: spacing.md,
     },
-    card: {
-        backgroundColor: colors.surface,
-        borderRadius: 12,
-        padding: spacing.md,
+    stepTitle: {
+        ...typography.h2,
         marginBottom: spacing.md,
-        elevation: 2,
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 1 },
-        shadowOpacity: 0.1,
-        shadowRadius: 2,
+        color: colors.text,
     },
-    cardHeader: {
-        flexDirection: 'row',
-        marginBottom: spacing.sm,
-    },
-    iconBox: {
-        width: 48,
-        height: 48,
-        backgroundColor: '#EFF6FF',
-        borderRadius: 8,
-        justifyContent: 'center',
-        alignItems: 'center',
-        marginRight: spacing.md,
-    },
-    headerContent: {
-        flex: 1,
-    },
-    titleRow: {
-        marginBottom: 4,
-    },
-    cardTitle: {
-        ...typography.h3,
-        fontSize: 16,
-    },
-    tagsRow: {
-        flexDirection: 'row',
-        gap: 8,
-    },
-    pillBlack: {
-        backgroundColor: '#1F2937',
-        paddingHorizontal: 8,
-        paddingVertical: 2,
-        borderRadius: 4,
-    },
-    pillTextWhite: {
-        color: 'white',
-        fontSize: 12,
-        fontWeight: 'bold',
-    },
-    pillStatus: {
-        paddingHorizontal: 8,
-        paddingVertical: 2,
-        borderRadius: 4,
-    },
-    pillTextStatus: {
-        fontSize: 12,
-        fontWeight: 'bold',
-    },
-    description: {
+    subtitle: {
         ...typography.body,
         color: colors.textSecondary,
-        marginBottom: spacing.md,
-        fontSize: 14,
+        marginBottom: spacing.lg,
     },
-    dateRow: {
+    label: {
+        ...typography.label,
+        marginBottom: spacing.xs,
+    },
+    readOnlyBox: {
+        padding: spacing.md,
+        backgroundColor: colors.surface,
+        borderRadius: 8,
+        borderWidth: 1,
+        borderColor: colors.border,
+        marginBottom: spacing.md,
+    },
+    readOnlyText: {
+        ...typography.body,
+        fontWeight: '500',
+    },
+    infoBox: {
         flexDirection: 'row',
         alignItems: 'center',
-        marginBottom: spacing.md,
+        backgroundColor: '#E0F2FE',
+        padding: spacing.md,
+        borderRadius: 8,
+        marginTop: spacing.sm,
     },
-    dateText: {
+    infoText: {
+        marginLeft: spacing.sm,
+        color: '#0369A1',
+        ...typography.caption,
+        fontWeight: '600'
+    },
+    helper: {
+        ...typography.caption,
+        marginBottom: spacing.lg,
         color: colors.textSecondary,
-        marginLeft: 6,
-        marginRight: spacing.md,
-        fontSize: 14,
     },
-    daysLeftPill: {
-        paddingHorizontal: 8,
-        paddingVertical: 2,
-        borderRadius: 4,
+    footer: {
+        padding: spacing.md,
+        flexDirection: 'row',
+        backgroundColor: colors.surface,
+        borderTopWidth: 1,
+        borderTopColor: colors.border,
     },
-    daysLeftText: {
-        fontSize: 12,
-        fontWeight: '600',
+    uploadBox: {
+        borderWidth: 1,
+        borderColor: colors.primary,
+        borderStyle: 'dashed',
+        borderRadius: 8,
+        padding: spacing.lg,
+        alignItems: 'center',
+        marginBottom: spacing.lg,
+        backgroundColor: '#F0F9FF',
     },
-    progressSection: {
+    uploadText: {
+        marginTop: spacing.sm,
         marginBottom: spacing.sm,
+        color: colors.text,
+        fontWeight: '500',
+        textAlign: 'center',
     },
-    progressLabelRow: {
+    calcBox: {
+        backgroundColor: colors.surface,
+        padding: spacing.md,
+        borderRadius: 8,
+        borderWidth: 1,
+        borderColor: colors.border,
         flexDirection: 'row',
         justifyContent: 'space-between',
-        marginBottom: 4,
-    },
-    progressLabel: {
-        fontSize: 12,
-        color: colors.textSecondary,
-    },
-    progressBarBg: {
-        height: 6,
-        backgroundColor: '#E5E7EB',
-        borderRadius: 3,
-    },
-    progressBarFill: {
-        height: '100%',
-        backgroundColor: '#1E40AF',
-        borderRadius: 3,
-    },
-    priorityRow: {
-        flexDirection: 'row',
         alignItems: 'center',
-        gap: 4,
+        marginTop: spacing.md,
     },
-    priorityText: {
+    calcLabel: {
+        ...typography.body,
+    },
+    calcValue: {
+        ...typography.h3,
         color: colors.error,
-        fontSize: 12,
+    },
+    paymentCard: {
+        backgroundColor: colors.surface,
+        padding: spacing.lg,
+        borderRadius: 8,
+        alignItems: 'center',
+        marginBottom: spacing.lg,
+        borderWidth: 1,
+        borderColor: colors.border,
+    },
+    paymentLabel: {
+        ...typography.caption,
+        color: colors.textSecondary,
+        marginBottom: spacing.xs,
+    },
+    paymentValue: {
+        fontSize: 32,
+        fontWeight: 'bold',
+        color: colors.text,
+    },
+    reviewCard: {
+        backgroundColor: colors.surface,
+        padding: spacing.md,
+        borderRadius: 8,
+        borderWidth: 1,
+        borderColor: colors.border,
+        marginBottom: spacing.md,
+    },
+    reviewRow: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        paddingVertical: spacing.xs,
+    },
+    reviewLabel: {
+        ...typography.body,
+        color: colors.textSecondary,
+        flex: 1,
+    },
+    reviewValue: {
+        ...typography.body,
         fontWeight: '500',
+        flex: 1,
+        textAlign: 'right',
+    },
+    divider: {
+        height: 1,
+        backgroundColor: colors.border,
+        marginVertical: spacing.sm,
+    },
+    warningBox: {
+        flexDirection: 'row',
+        padding: spacing.sm,
+        backgroundColor: '#FFFBEB',
+        borderRadius: 4,
+        marginTop: spacing.sm,
+    },
+    warningText: {
+        fontSize: 12,
+        color: '#B45309',
+        marginLeft: spacing.xs,
+        flex: 1,
     }
 });

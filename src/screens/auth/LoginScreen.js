@@ -7,20 +7,40 @@ import { spacing } from '../../constants/spacing';
 import { colors } from '../../constants/colors';
 
 export const LoginScreen = ({ navigation }) => {
-    const { login } = useAuth();
-    // We can add local state for email/pass if we want, but for mock login we hardcode
+    const { login, isLoading, error } = useAuth();
+    const [email, setEmail] = React.useState('');
+    const [password, setPassword] = React.useState('');
 
     return (
         <View style={styles.container}>
-            <Text style={styles.title}>ComplyEase</Text>
+            <Text style={styles.title}>Surefile</Text>
             <Text style={styles.subtitle}>Login to your account</Text>
 
             <View style={{ width: '100%', marginBottom: spacing.lg }}>
-                <Input label="Email" placeholder="demo@example.com" />
-                <Input label="Password" placeholder="password" secureTextEntry={true} />
+                <Input
+                    label="Email"
+                    placeholder="demo@example.com"
+                    value={email}
+                    onChangeText={setEmail}
+                    autoCapitalize="none"
+                    keyboardType="email-address"
+                />
+                <Input
+                    label="Password"
+                    placeholder="password"
+                    secureTextEntry={true}
+                    value={password}
+                    onChangeText={setPassword}
+                />
+                {error && <Text style={{ color: colors.error, marginTop: 8 }}>{error}</Text>}
             </View>
 
-            <Button title="Login (Mock)" onPress={() => login('demo@example.com', 'password')} style={styles.btn} />
+            <Button
+                title={isLoading ? "Logging in..." : "Login"}
+                onPress={() => login(email, password)}
+                style={styles.btn}
+                disabled={!email || !password || isLoading}
+            />
             <Button title="Create Account" onPress={() => navigation.navigate('Signup')} variant="outline" style={styles.btn} />
         </View>
     );

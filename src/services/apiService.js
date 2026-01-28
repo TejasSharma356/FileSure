@@ -1,16 +1,17 @@
 import { MOCK_COMPLIANCES } from '../mockData/compliances';
 import { MOCK_USER } from '../mockData/user';
 
-// Simulate network delay
+const BASE_URL = 'http://10.3.50.245:3000'; // Detected LAN IP
+// const BASE_URL = 'http://localhost:3000'; // For simulator
+
+// Simulate network delay for non-chat mock calls
 const delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
 export const apiService = {
-    // Authentication (Mock)
+    // Authentication (Mock for now, can be real later)
     login: async (email, password) => {
         await delay(1000);
         if (email === 'demo@example.com' && password === 'password') {
-            // Return a user object without business profile initially if needed,
-            // but for simplicity we return the full mock user for now or a basic auth token equivalent
             return { token: 'mock-jwt-token', user: { id: 'u1', email } };
         }
         throw new Error('Invalid credentials');
@@ -79,7 +80,40 @@ export const apiService = {
             id: c.id,
             title: c.title,
             dueDate: c.dueDate,
-            status: new Date(c.dueDate) < new Date() ? 'At Risk' : 'Safe' // Simple logic
+            status: new Date(c.dueDate) < new Date() ? 'At Risk' : 'Safe'
         }));
+    },
+
+    // Chat / LLM
+    startChat: async (userId) => {
+        try {
+            const response = await fetch(`${BASE_URL}/chat/start`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ userId })
+            });
+            return await response.json();
+        } catch (error) {
+            console.error('API Error startChat:', error);
+            throw error;
+        }
+    },
+
+    sendMessage: async (conversationId, message, context) => {
+        try {
+            const response = await fetch(`${BASE_URL}/chat/message`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    conversationId,
+                    message,
+                    ...context
+                })
+            });
+            return await response.json();
+        } catch (error) {
+            console.error('API Error sendMessage:', error);
+            throw error;
+        }
     }
 };

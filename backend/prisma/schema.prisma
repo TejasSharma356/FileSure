@@ -1,0 +1,59 @@
+datasource db {
+  provider = "sqlite"
+  url      = "file:./dev.db"
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model User {
+  id              String           @id @default(uuid())
+  email           String           @unique
+  name            String?
+  createdAt       DateTime         @default(now())
+  businessProfile BusinessProfile?
+  conversations   Conversation[]
+}
+
+model BusinessProfile {
+  id               String            @id @default(uuid())
+  userId           String            @unique
+  user             User              @relation(fields: [userId], references: [id])
+  businessName     String?
+  type             String?           // Proprietorship, etc.
+  turnover         String?           // Range or value
+  gstRegistered    Boolean           @default(false)
+  createdAt        DateTime          @default(now())
+  contextSnapshots ContextSnapshot[]
+}
+
+model Conversation {
+  id        String    @id @default(uuid())
+  userId    String
+  user      User      @relation(fields: [userId], references: [id])
+  status    String    @default("ACTIVE") // ACTIVE, CLOSED
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  messages  Message[]
+}
+
+model Message {
+  id              String           @id @default(uuid())
+  conversationId  String
+  conversation    Conversation     @relation(fields: [conversationId], references: [id])
+  role            String           // "user" or "assistant"
+  content         String
+  timestamp       DateTime         @default(now())
+  contextSnapshot ContextSnapshot?
+}
+
+model ContextSnapshot {
+  id              String   @id @default(uuid())
+  messageId       String   @unique
+  message         Message  @relation(fields: [messageId], references: [id])
+  currentScreen   String?
+  currentStep     Int?
+  businessContext Json?    // JSON dump of relevant business state at that moment
+  createdAt       DateTime @default(now())
+}

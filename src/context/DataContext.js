@@ -54,6 +54,16 @@ export const DataProvider = ({ children }) => {
         console.log('Revenue saved locally in context');
     };
 
+    const saveComplianceDraft = (id, draftData) => {
+        setCompliances(prev => prev.map(item => {
+            if (item.id === id) {
+                return { ...item, status: 'Draft Saved', draftData };
+            }
+            return item;
+        }));
+        console.log('Compliance draft saved:', id);
+    };
+
     return (
         <DataContext.Provider value={{
             businessProfile,
@@ -64,6 +74,7 @@ export const DataProvider = ({ children }) => {
             refreshData: fetchData,
             completeOnboarding, // Exposed method
             saveRevenue,
+            saveComplianceDraft,
         }}>
             {children}
         </DataContext.Provider>

@@ -29,7 +29,7 @@ export const LandingScreen = ({ navigation }) => {
                 <View style={styles.iconBox}>
                     <Ionicons name="shield-checkmark" size={64} color="white" />
                 </View>
-                <Text style={styles.title}>ComplyEase</Text>
+                <Text style={styles.title}>Vyapar Mitra</Text>
                 <Text style={styles.subtitle}>Simplify Your Business Compliance</Text>
             </Animated.View>
         </View>

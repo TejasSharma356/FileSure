@@ -21,7 +21,19 @@ export const DashboardScreen = ({ navigation }) => {
         // Mock doc needs for now as we don't track docs yet
         const docNeeds = 2;
 
-        return { upcoming, pending, docNeeds };
+        // Dynamic Score Calculation
+        let calculatedScore = 100;
+        compliances.forEach(c => {
+            if (c.status === 'Pending') {
+                const days = (new Date(c.dueDate) - new Date()) / (1000 * 60 * 60 * 24);
+                if (days < 3) calculatedScore -= 20; // At Risk (High penalty)
+                else calculatedScore -= 10; // Normal Pending
+            }
+        });
+        // Clamp score between 0 and 100
+        calculatedScore = Math.max(0, Math.min(100, calculatedScore));
+
+        return { upcoming, pending, docNeeds, calculatedScore };
     }, [compliances]);
 
     const getStatusColor = (status, dueDate) => {
@@ -60,7 +72,7 @@ export const DashboardScreen = ({ navigation }) => {
                         <View>
                             <Text style={styles.scoreLabel}>Score</Text>
                             <Text style={styles.scoreValue}>
-                                {businessProfile.complianceHealth || 85}<Text style={styles.scoreTotal}>/100</Text>
+                                {stats.calculatedScore}<Text style={styles.scoreTotal}>/100</Text>
                             </Text>
                         </View>
                         <View style={styles.statusBadge}>
@@ -69,7 +81,7 @@ export const DashboardScreen = ({ navigation }) => {
                     </View>
 
                     <View style={styles.progressBarBg}>
-                        <View style={[styles.progressBarFill, { width: `${businessProfile.complianceHealth || 85}%` }]} />
+                        <View style={[styles.progressBarFill, { width: `${stats.calculatedScore}%` }]} />
                     </View>
                 </View>
 
@@ -143,14 +155,24 @@ export const DashboardScreen = ({ navigation }) => {
                 </View>
             </ScrollView>
 
-            {/* FAB */}
-            <TouchableOpacity
-                style={styles.fab}
-                onPress={() => navigation.navigate('Filing')}
-            >
-                <Ionicons name="add" size={24} color="white" />
-                <Text style={styles.fabText}>File Now</Text>
-            </TouchableOpacity>
+            {/* FABs */}
+            <View style={styles.fabContainer}>
+                <TouchableOpacity
+                    style={[styles.fab, styles.fabSecondary]}
+                    onPress={() => navigation.navigate('Chat')}
+                >
+                    <Ionicons name="chatbubbles" size={24} color={colors.primary} />
+                    <Text style={[styles.fabText, { color: colors.primary }]}>Ask AI</Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                    style={styles.fab}
+                    onPress={() => navigation.navigate('Filing')}
+                >
+                    <Ionicons name="add" size={24} color="white" />
+                    <Text style={styles.fabText}>File Now</Text>
+                </TouchableOpacity>
+            </View>
         </View>
     );
 };
@@ -374,10 +396,14 @@ const styles = StyleSheet.create({
         color: colors.textSecondary,
         marginTop: spacing.md,
     },
-    fab: {
+    fabContainer: {
         position: 'absolute',
         bottom: 24,
         right: 24,
+        alignItems: 'flex-end',
+        gap: 12,
+    },
+    fab: {
         backgroundColor: '#1D4ED8',
         flexDirection: 'row',
         alignItems: 'center',
@@ -389,6 +415,11 @@ const styles = StyleSheet.create({
         shadowOffset: { width: 0, height: 4 },
         shadowOpacity: 0.3,
         shadowRadius: 8,
+    },
+    fabSecondary: {
+        backgroundColor: 'white',
+        borderWidth: 1,
+        borderColor: '#E5E7EB',
     },
     fabText: {
         color: 'white',

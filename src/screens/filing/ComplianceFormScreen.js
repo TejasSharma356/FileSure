@@ -5,10 +5,12 @@ import { spacing } from '../../constants/spacing';
 import { typography } from '../../constants/typography';
 import { Button } from '../../components/Button';
 import { Input } from '../../components/Input';
+import { useData } from '../../context/DataContext';
 import { Ionicons } from '@expo/vector-icons';
 
 export const ComplianceFormScreen = ({ navigation, route }) => {
     const { complianceId, title } = route.params || {};
+    const { saveComplianceDraft } = useData();
     const [step, setStep] = useState(1);
     const totalSteps = 5;
 
@@ -17,14 +19,57 @@ export const ComplianceFormScreen = ({ navigation, route }) => {
     const [bizType, setBizType] = useState('');
     const [turnover, setTurnover] = useState('');
 
+    // Step 2
+    const [fy, setFy] = useState('');
+    const [period, setPeriod] = useState('');
+
+    // Step 3
+    const [sales, setSales] = useState('');
+    const [otherIncome, setOtherIncome] = useState('');
+
+    // Step 4
+    const [expenses, setExpenses] = useState('');
+    const [tds, setTds] = useState('');
+
+    const isStepValid = () => {
+        switch (step) {
+            case 1: return !!bizName && !!bizType && !!turnover;
+            case 2: return !!fy && !!period;
+            case 3: return !!sales; // Other income optional
+            case 4: return !!expenses; // TDS optional
+            case 5: return true; // Review step always valid
+            default: return false;
+        }
+    };
+
     const handleBack = () => {
         if (step > 1) setStep(step - 1);
         else navigation.goBack();
     };
 
     const handleNext = () => {
-        if (step < totalSteps) setStep(step + 1);
-        else Alert.alert("Success", "Filing Draft Saved!");
+        if (!isStepValid()) {
+            Alert.alert("Missing Fields", "Please fill in all required fields to proceed.");
+            return;
+        }
+
+        if (step < totalSteps) {
+            setStep(step + 1);
+        } else {
+            // Save Draft
+            if (complianceId) {
+                const draftData = {
+                    bizName, bizType, turnover,
+                    fy, period,
+                    sales, otherIncome,
+                    expenses, tds
+                };
+                saveComplianceDraft(complianceId, draftData);
+            }
+            Alert.alert("Success", "Filing Draft Saved!", [
+                { text: "OK", onPress: () => navigation.goBack() }
+            ]);
+        }
     };
 
     const progress = (step / totalSteps) * 100;
@@ -85,17 +130,78 @@ export const ComplianceFormScreen = ({ navigation, route }) => {
                         />
                     </View>
                 )}
-                {step > 1 && (
-                    <View style={styles.placeholderStep}>
-                        <Text style={styles.sectionTitle}>Step {step}</Text>
-                        <Text>Form details for step {step}...</Text>
+                {step === 2 && (
+                    <View>
+                        <Text style={styles.sectionTitle}>Filing Period</Text>
+                        <Text style={styles.sectionSubtitle}>Select the period you are filing for</Text>
+
+                        {/* Placeholder for Date/Period Selection */}
+                        <Input
+                            label="Financial Year"
+                            placeholder="e.g. 2024-2025"
+                        />
+                        <Input
+                            label="Month/Quarter"
+                            placeholder="e.g. Q1 (April - June)"
+                        />
+                    </View>
+                )}
+                {step === 3 && (
+                    <View>
+                        <Text style={styles.sectionTitle}>Income Details</Text>
+                        <Text style={styles.sectionSubtitle}>Enter your revenue details for this period</Text>
+
+                        <Input
+                            label="Total Sales (Revenue)"
+                            placeholder="0.00"
+                        />
+                        <Input
+                            label="Other Income"
+                            placeholder="0.00"
+                        />
+                    </View>
+                )}
+                {step === 4 && (
+                    <View>
+                        <Text style={styles.sectionTitle}>Deductions & Expenses</Text>
+                        <Text style={styles.sectionSubtitle}>Claim your valid business expenses</Text>
+
+                        <Input
+                            label="Total Expenses"
+                            placeholder="0.00"
+                        />
+                        <Input
+                            label="Tax Deducted at Source (TDS Credit)"
+                            placeholder="0.00"
+                        />
+                    </View>
+                )}
+                {step === 5 && (
+                    <View>
+                        <Text style={styles.sectionTitle}>Review & Verify</Text>
+                        <Text style={styles.sectionSubtitle}>Please review all details before generating the draft.</Text>
+
+                        <View style={{ backgroundColor: colors.surface, padding: spacing.md, borderRadius: 8, borderWidth: 1, borderColor: colors.border }}>
+                            <Text style={{ fontWeight: 'bold', marginBottom: 4 }}>Business:</Text>
+                            <Text style={{ marginBottom: 12 }}>{bizName || 'Not entered'}</Text>
+
+                            <Text style={{ fontWeight: 'bold', marginBottom: 4 }}>Type:</Text>
+                            <Text style={{ marginBottom: 12 }}>{bizType || 'Not entered'}</Text>
+
+                            <Text style={{ fontWeight: 'bold', marginBottom: 4 }}>Turnover:</Text>
+                            <Text>{turnover || 'Not entered'}</Text>
+                        </View>
                     </View>
                 )}
             </ScrollView>
 
             {/* Footer */}
             <View style={styles.footer}>
-                <Button title="Continue" onPress={handleNext} style={styles.continueBtn} />
+                <Button
+                    title={step === totalSteps ? "Finish & Save" : "Continue"}
+                    onPress={handleNext}
+                    style={[styles.continueBtn, !isStepValid() && styles.disabledBtn]}
+                />
                 <Button title="Save Draft" variant="outline" onPress={() => navigation.goBack()} style={styles.draftBtn} />
             </View>
         </SafeAreaView>
@@ -106,6 +212,10 @@ const styles = StyleSheet.create({
     container: {
         flex: 1,
         backgroundColor: "white", // Image shows white background
+    },
+    disabledBtn: {
+        backgroundColor: colors.border,
+        opacity: 0.7
     },
     header: {
         flexDirection: 'row',

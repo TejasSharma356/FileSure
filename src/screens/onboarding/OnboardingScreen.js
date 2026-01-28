@@ -80,7 +80,7 @@ export const OnboardingScreen = () => {
     return (
         <ScrollView contentContainerStyle={styles.container}>
             <View style={styles.header}>
-                <Text style={styles.title}>Welcome to ComplyEase</Text>
+                <Text style={styles.title}>Welcome to Vyapar Mitra</Text>
                 <Text style={styles.subtitle}>Let's set up your business profile to get started.</Text>
             </View>
 

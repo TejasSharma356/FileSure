@@ -8,6 +8,7 @@ import { ReturnFilingScreen } from '../screens/filing/ReturnFilingScreen';
 import { DeadlinesScreen } from '../screens/deadlines/DeadlinesScreen';
 import { ProfileScreen } from '../screens/profile/ProfileScreen';
 import { ComplianceFormScreen } from '../screens/filing/ComplianceFormScreen';
+import { ChatScreen } from '../screens/ChatScreen';
 import { colors } from '../constants/colors';
 
 const Tab = createBottomTabNavigator();
@@ -62,6 +63,7 @@ export const AppNavigator = () => {
         <Stack.Navigator screenOptions={{ headerShown: false }}>
             <Stack.Screen name="MainTabs" component={TabNavigator} />
             <Stack.Screen name="ComplianceForm" component={ComplianceFormScreen} />
+            <Stack.Screen name="Chat" component={ChatScreen} />
         </Stack.Navigator>
     );
 };

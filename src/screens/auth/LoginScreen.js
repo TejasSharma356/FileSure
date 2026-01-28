@@ -12,7 +12,7 @@ export const LoginScreen = ({ navigation }) => {
 
     return (
         <View style={styles.container}>
-            <Text style={styles.title}>ComplyEase</Text>
+            <Text style={styles.title}>Vyapar Mitra</Text>
             <Text style={styles.subtitle}>Login to your account</Text>
 
             <View style={{ width: '100%', marginBottom: spacing.lg }}>

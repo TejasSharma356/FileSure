@@ -1,4 +1,4 @@
-# vardanMitr
+# VyaparMitr
 ### Smart Compliance & Return Preparation App for MSMEs
 
 FileSure is a mobile application designed to help small business owners (MSMEs), freelancers, and local businesses understand, prepare, and manage their tax and compliance obligations in a simple, guided way.
@@ -151,4 +151,5 @@ FileSure helps small businesses understand, prepare, and stay compliant — with
 
 Built with ❤️
 Team VyaparMitr
+
 

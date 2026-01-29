@@ -66,8 +66,8 @@ export const ComplianceFormScreen = ({ navigation, route }) => {
                 };
                 saveComplianceDraft(complianceId, draftData);
             }
-            Alert.alert("Success", "Filing Draft Saved!", [
-                { text: "OK", onPress: () => navigation.goBack() }
+            Alert.alert("Success", "Compliance Form Saved Successfully!", [
+                { text: "Go to Dashboard", onPress: () => navigation.goBack() }
             ]);
         }
     };
@@ -139,10 +139,14 @@ export const ComplianceFormScreen = ({ navigation, route }) => {
                         <Input
                             label="Financial Year"
                             placeholder="e.g. 2024-2025"
+                            value={fy}
+                            onChangeText={setFy}
                         />
                         <Input
                             label="Month/Quarter"
                             placeholder="e.g. Q1 (April - June)"
+                            value={period}
+                            onChangeText={setPeriod}
                         />
                     </View>
                 )}
@@ -154,10 +158,16 @@ export const ComplianceFormScreen = ({ navigation, route }) => {
                         <Input
                             label="Total Sales (Revenue)"
                             placeholder="0.00"
+                            value={sales}
+                            onChangeText={setSales}
+                            keyboardType="numeric"
                         />
                         <Input
                             label="Other Income"
                             placeholder="0.00"
+                            value={otherIncome}
+                            onChangeText={setOtherIncome}
+                            keyboardType="numeric"
                         />
                     </View>
                 )}
@@ -169,10 +179,16 @@ export const ComplianceFormScreen = ({ navigation, route }) => {
                         <Input
                             label="Total Expenses"
                             placeholder="0.00"
+                            value={expenses}
+                            onChangeText={setExpenses}
+                            keyboardType="numeric"
                         />
                         <Input
                             label="Tax Deducted at Source (TDS Credit)"
                             placeholder="0.00"
+                            value={tds}
+                            onChangeText={setTds}
+                            keyboardType="numeric"
                         />
                     </View>
                 )}
@@ -181,15 +197,53 @@ export const ComplianceFormScreen = ({ navigation, route }) => {
                         <Text style={styles.sectionTitle}>Review & Verify</Text>
                         <Text style={styles.sectionSubtitle}>Please review all details before generating the draft.</Text>
 
-                        <View style={{ backgroundColor: colors.surface, padding: spacing.md, borderRadius: 8, borderWidth: 1, borderColor: colors.border }}>
-                            <Text style={{ fontWeight: 'bold', marginBottom: 4 }}>Business:</Text>
-                            <Text style={{ marginBottom: 12 }}>{bizName || 'Not entered'}</Text>
+                        <View style={{ backgroundColor: colors.surface, borderRadius: 12, borderWidth: 1, borderColor: colors.border, overflow: 'hidden' }}>
+                            {/* Business Section */}
+                            <View style={{ padding: spacing.md, borderBottomWidth: 1, borderBottomColor: '#F3F4F6' }}>
+                                <Text style={{ fontSize: 16, fontWeight: 'bold', color: colors.primary, marginBottom: 8 }}>Business Details</Text>
+                                <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 4 }}>
+                                    <Text style={{ color: colors.textSecondary }}>Name:</Text>
+                                    <Text style={{ fontWeight: '600' }}>{bizName || '-'}</Text>
+                                </View>
+                                <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 4 }}>
+                                    <Text style={{ color: colors.textSecondary }}>Type:</Text>
+                                    <Text style={{ fontWeight: '600' }}>{bizType || '-'}</Text>
+                                </View>
+                                <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
+                                    <Text style={{ color: colors.textSecondary }}>Turnover:</Text>
+                                    <Text style={{ fontWeight: '600' }}>₹{turnover || '0'}</Text>
+                                </View>
+                            </View>
 
-                            <Text style={{ fontWeight: 'bold', marginBottom: 4 }}>Type:</Text>
-                            <Text style={{ marginBottom: 12 }}>{bizType || 'Not entered'}</Text>
+                            {/* Filing Period */}
+                            <View style={{ padding: spacing.md, borderBottomWidth: 1, borderBottomColor: '#F3F4F6', backgroundColor: '#F9FAFB' }}>
+                                <Text style={{ fontSize: 16, fontWeight: 'bold', color: colors.primary, marginBottom: 8 }}>Filing Period</Text>
+                                <Text style={{ fontWeight: '500' }}>{period} ({fy})</Text>
+                            </View>
 
-                            <Text style={{ fontWeight: 'bold', marginBottom: 4 }}>Turnover:</Text>
-                            <Text>{turnover || 'Not entered'}</Text>
+                            {/* Financial Summary */}
+                            <View style={{ padding: spacing.md }}>
+                                <Text style={{ fontSize: 16, fontWeight: 'bold', color: colors.primary, marginBottom: 8 }}>Financial Summary</Text>
+                                <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 4 }}>
+                                    <Text style={{ color: colors.textSecondary }}>Total Sales:</Text>
+                                    <Text style={{ fontWeight: '600' }}>₹{sales || '0'}</Text>
+                                </View>
+                                <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 4 }}>
+                                    <Text style={{ color: colors.textSecondary }}>Total Expenses:</Text>
+                                    <Text style={{ fontWeight: '600' }}>₹{expenses || '0'}</Text>
+                                </View>
+                                <View style={{ height: 1, backgroundColor: colors.border, marginVertical: 8 }} />
+                                <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 4 }}>
+                                    <Text style={{ color: colors.text, fontWeight: 'bold' }}>Net Taxable:</Text>
+                                    <Text style={{ fontWeight: 'bold', color: colors.success }}>
+                                        ₹{Math.max(0, (parseFloat(sales || 0) - parseFloat(expenses || 0))).toFixed(2)}
+                                    </Text>
+                                </View>
+                                <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
+                                    <Text style={{ color: colors.textSecondary }}>TDS Credit:</Text>
+                                    <Text style={{ fontWeight: '600' }}>-₹{tds || '0'}</Text>
+                                </View>
+                            </View>
                         </View>
                     </View>
                 )}
@@ -198,11 +252,14 @@ export const ComplianceFormScreen = ({ navigation, route }) => {
             {/* Footer */}
             <View style={styles.footer}>
                 <Button
-                    title={step === totalSteps ? "Finish & Save" : "Continue"}
+                    title={step === totalSteps ? "Confirm & Save" : "Continue"}
                     onPress={handleNext}
                     style={[styles.continueBtn, !isStepValid() && styles.disabledBtn]}
                 />
-                <Button title="Save Draft" variant="outline" onPress={() => navigation.goBack()} style={styles.draftBtn} />
+                <Button title="Save Draft" variant="outline" onPress={() => {
+                    Alert.alert("Draft Saved", "You can resume this later.");
+                    navigation.goBack();
+                }} style={styles.draftBtn} />
             </View>
         </SafeAreaView>
     );
@@ -214,8 +271,8 @@ const styles = StyleSheet.create({
         backgroundColor: "white", // Image shows white background
     },
     disabledBtn: {
-        backgroundColor: colors.border,
-        opacity: 0.7
+        backgroundColor: colors.primary,
+        opacity: 0.5
     },
     header: {
         flexDirection: 'row',
@@ -293,9 +350,7 @@ const styles = StyleSheet.create({
         borderTopColor: '#F3F4F6',
     },
     continueBtn: {
-        backgroundColor: '#E5E7EB', // Disabled/gray look in image initially? Or use primary.
-        // The image shows gray "Continue" which implies unchecked state, but "Save Draft" is outline blue.
-        // I will use primary for Continue for now or gray if disabled logic added.
+        backgroundColor: colors.primary,
         marginBottom: spacing.md,
     },
     draftBtn: {

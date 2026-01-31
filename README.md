@@ -1,7 +1,7 @@
 # VyaparMitr
 ### Smart Compliance & Return Preparation App for MSMEs
 
-FileSure is a mobile application designed to help small business owners (MSMEs), freelancers, and local businesses understand, prepare, and manage their tax and compliance obligations in a simple, guided way.
+VyaparMitr is a mobile application designed to help small business owners (MSMEs), freelancers, and local businesses understand, prepare, and manage their tax and compliance obligations in a simple, guided way.
 
 The app focuses on **clarity, guidance, and preparation** — not direct government filing. It helps users know what applies to them, organize their data, and prepare returns with reduced confusion and fewer mistakes.
 
@@ -16,7 +16,7 @@ Small businesses often struggle with:
 - Missing deadlines
 - Fear of penalties due to mistakes
 
-FileSure simplifies this by providing:
+VyaparMitr simplifies this by providing:
 - Personalized compliance guidance
 - Step‑by‑step preparation flows
 - Simplified return forms
@@ -98,7 +98,7 @@ No hardcoded business logic inside screens.
 
 ## 🤖 Chatbot & Guidance (Concept)
 
-FileSure includes a contextual guidance assistant that:
+VyaparMitr includes a contextual guidance assistant that:
 - Knows the user’s current step
 - Understands business profile
 - Provides step‑by‑step explanations
@@ -114,7 +114,7 @@ This is designed to later integrate with a backend + LLM system.
 - Not a direct tax filing system  
 - Not a legal or CA replacement  
 
-FileSure is a **preparation, guidance, and confidence‑building tool.**
+VyaparMitr is a **preparation, guidance, and confidence‑building tool.**
 
 ---
 
@@ -147,9 +147,10 @@ To build a realistic, professional compliance‑assistance product that:
 Tejas Sharma
 GitHub: https://github.com/TejasSharma356
 
-FileSure helps small businesses understand, prepare, and stay compliant — without fear, confusion, or mistakes.
+VyaparMitr helps small businesses understand, prepare, and stay compliant — without fear, confusion, or mistakes.
 
 Built with ❤️
 Team VyaparMitr
+
 
 
